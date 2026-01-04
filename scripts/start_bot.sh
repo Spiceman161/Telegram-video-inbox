@@ -11,5 +11,6 @@ if [ -d venv ]; then
     source venv/bin/activate
 fi
 
-# Start bot
-python bot/main.py 2>&1 | tee -a logs/bot-output.log
+# Start bot (run as module to fix imports)
+python -m bot.main 2>&1 | tee -a logs/bot-output.log
+

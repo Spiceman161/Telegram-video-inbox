@@ -16,8 +16,9 @@ echo "Starting Bot API server..."
 # Wait for API server to initialize
 sleep 10
 
-# Start bot in background
+# Start bot in background (run as module)
 echo "Starting bot..."
-~/telegram-video-inbox/scripts/start_bot.sh &
+cd ~/telegram-video-inbox && python -m bot.main >> logs/bot-output.log 2>&1 &
 
 echo "Telegram Video Inbox started successfully!"
+
