@@ -35,8 +35,15 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         filename=video.file_name
     )
     
-    # Send acknowledgment
-    status_msg = await update.message.reply_text("⬇️ Загружаю видео...")
+    # Send acknowledgment with file size if available
+    size_mb = video.file_size / (1024 * 1024) if video.file_size else 0
+    if size_mb > 50:
+        status_msg = await update.message.reply_text(
+            f"⬇️ Загружаю видео ({size_mb:.1f} МБ)...\n\n"
+            "⏳ Большой файл, это может занять несколько минут."
+        )
+    else:
+        status_msg = await update.message.reply_text("⬇️ Загружаю видео...")
     
     try:
         # Download video
@@ -80,9 +87,10 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
             error=str(e)
         )
         
+        error_text = str(e)
         await status_msg.edit_text(
-            "❌ Ошибка при загрузке видео.\n"
-            f"Попробуйте ещё раз."
+            f"❌ Ошибка при загрузке видео.\n\n"
+            f"{error_text}"
         )
 
 
@@ -115,8 +123,15 @@ async def handle_video_document(update: Update, context: ContextTypes.DEFAULT_TY
         filename=document.file_name
     )
     
-    # Send acknowledgment
-    status_msg = await update.message.reply_text("⬇️ Загружаю видео...")
+    # Send acknowledgment with file size if available
+    size_mb = document.file_size / (1024 * 1024) if document.file_size else 0
+    if size_mb > 50:
+        status_msg = await update.message.reply_text(
+            f"⬇️ Загружаю видео ({size_mb:.1f} МБ)...\n\n"
+            "⏳ Большой файл, это может занять несколько минут."
+        )
+    else:
+        status_msg = await update.message.reply_text("⬇️ Загружаю видео...")
     
     try:
         # Download video document
@@ -160,9 +175,10 @@ async def handle_video_document(update: Update, context: ContextTypes.DEFAULT_TY
             error=str(e)
         )
         
+        error_text = str(e)
         await status_msg.edit_text(
-            "❌ Ошибка при загрузке видео.\n"
-            f"Попробуйте ещё раз."
+            f"❌ Ошибка при загрузке видео.\n\n"
+            f"{error_text}"
         )
 
 

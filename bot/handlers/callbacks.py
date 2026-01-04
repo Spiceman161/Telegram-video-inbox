@@ -4,6 +4,7 @@ import logging
 
 from telegram import Update
 from telegram.ext import Application, CallbackQueryHandler, ContextTypes
+from telegram.error import BadRequest
 
 from bot.config import config
 from bot.services.file_manager import file_manager
@@ -51,6 +52,10 @@ async def handle_pagination(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         # Update state
         user_state.update_page(user_id, page)
+    except BadRequest as e:
+        # Ignore "message is not modified" error
+        if "message is not modified" not in str(e).lower():
+            logging.getLogger(__name__).error(f"Error updating pagination: {e}")
     except Exception as e:
         logging.getLogger(__name__).error(f"Error updating pagination: {e}")
 
@@ -243,6 +248,10 @@ async def handle_list_refresh(update: Update, context: ContextTypes.DEFAULT_TYPE
             parse_mode="HTML"
         )
         user_state.update_page(user_id, 0)
+    except BadRequest as e:
+        # Ignore "message is not modified" error
+        if "message is not modified" not in str(e).lower():
+            logging.getLogger(__name__).error(f"Error refreshing list: {e}")
     except Exception as e:
         logging.getLogger(__name__).error(f"Error refreshing list: {e}")
 
@@ -275,6 +284,10 @@ async def handle_list_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=keyboard,
             parse_mode="HTML"
         )
+    except BadRequest as e:
+        # Ignore "message is not modified" error
+        if "message is not modified" not in str(e).lower():
+            logging.getLogger(__name__).error(f"Error returning to list: {e}")
     except Exception as e:
         logging.getLogger(__name__).error(f"Error returning to list: {e}")
 

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 from telegram import Bot
+from telegram.error import TimedOut
 
 from bot.config import config
 from bot.services.file_manager import file_manager
@@ -62,7 +63,16 @@ class DownloadManager:
         temp_path = None
         try:
             # Get file info from Telegram
-            tg_file = await bot.get_file(file_id)
+            # For large files or first-time forwards, local Bot API server
+            # needs time to download from Telegram servers
+            # Increase timeout to 5 minutes for large files
+            tg_file = await bot.get_file(
+                file_id,
+                read_timeout=300,  # 5 minutes for get_file
+                write_timeout=300,
+                connect_timeout=60,
+                pool_timeout=60
+            )
             
             # Generate safe filename
             final_filename = file_manager.generate_filename(
@@ -75,7 +85,14 @@ class DownloadManager:
             
             # Download to temp file
             # PTB's download_to_drive method handles the actual download
-            await tg_file.download_to_drive(str(temp_path))
+            # Set long timeout for large video files
+            await tg_file.download_to_drive(
+                str(temp_path),
+                read_timeout=600,  # 10 minutes for actual download
+                write_timeout=600,
+                connect_timeout=60,
+                pool_timeout=60
+            )
             
             # Atomic move to final location
             # Use shutil.move() instead of rename() to support cross-device moves
@@ -83,6 +100,13 @@ class DownloadManager:
             
             return final_path
             
+        except TimedOut as e:
+            # Timeout error - give user helpful message
+            raise Exception(
+                "Загрузка большого файла заняла слишком много времени. "
+                "Попробуйте: 1) Сначала скачать видео в Telegram, затем переслать боту. "
+                "2) Отправить файл меньшего размера."
+            ) from e
         except Exception as e:
             # Clean up temp file if exists
             if temp_path and temp_path.exists():
