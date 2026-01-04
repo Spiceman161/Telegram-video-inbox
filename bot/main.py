@@ -1,17 +1,16 @@
 """Main bot application entry point."""
 
-import asyncio
 import logging
 
 from telegram import Update
-from telegram.ext import Application, ContextTypes, filters
+from telegram.ext import Application, ContextTypes
 
 from bot.config import config
 from bot.handlers import commands, messages, callbacks
 from bot.utils.logger import setup_logger
 
 
-async def main():
+def main():
     """Main bot application."""
     # Setup logging
     logger = setup_logger("telegram_video_inbox", config.log_path, config.log_level)
@@ -32,35 +31,24 @@ async def main():
     
     logger.info(f"Whitelist enabled for user IDs: {config.allowed_user_ids}")
     
-    # Register handlers (will be implemented in handler modules)
+    # Register handlers
     commands.register_handlers(app, logger)
     messages.register_handlers(app, logger)
     callbacks.register_handlers(app, logger)
     
     logger.info("Handlers registered")
     
-    # Log bot info
-    try:
-        bot_info = await app.bot.get_me()
-        logger.info(f"Bot started: @{bot_info.username} (ID: {bot_info.id})")
-    except Exception as e:
-        logger.error(f"Failed to get bot info: {e}")
-        logger.error("Make sure local Bot API server is running!")
-        return
-    
-    # Start polling
+    # Start polling (this will handle the event loop internally)
     logger.info("Starting long polling...")
-    try:
-        await app.run_polling(allowed_updates=Update.ALL_TYPES)
-    finally:
-        logger.info("Bot stopped")
+    app.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        main()
     except KeyboardInterrupt:
         print("\nBot stopped by user")
     except Exception as e:
         print(f"Fatal error: {e}")
         raise
+
