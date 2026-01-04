@@ -1,6 +1,7 @@
 """Download manager with concurrency control."""
 
 import asyncio
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -77,7 +78,8 @@ class DownloadManager:
             await tg_file.download_to_drive(str(temp_path))
             
             # Atomic move to final location
-            temp_path.rename(final_path)
+            # Use shutil.move() instead of rename() to support cross-device moves
+            shutil.move(str(temp_path), str(final_path))
             
             return final_path
             
