@@ -2,7 +2,7 @@
 
 from typing import List
 
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot.services.file_manager import FileInfo
 
@@ -63,7 +63,7 @@ def get_file_list_keyboard(
         InlineKeyboardButton(text="🔄 Обновить", callback_data="list:refresh")
     ])
     
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return InlineKeyboardMarkup(buttons)
 
 
 def get_file_actions_keyboard(file_id: str) -> InlineKeyboardMarkup:
@@ -82,7 +82,7 @@ def get_file_actions_keyboard(file_id: str) -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="↩️ Назад к списку", callback_data="list:back")]
     ]
     
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return InlineKeyboardMarkup(buttons)
 
 
 def get_delete_confirmation_keyboard(file_id: str) -> InlineKeyboardMarkup:
@@ -102,7 +102,7 @@ def get_delete_confirmation_keyboard(file_id: str) -> InlineKeyboardMarkup:
         ]
     ]
     
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return InlineKeyboardMarkup(buttons)
 
 
 def get_empty_list_keyboard() -> InlineKeyboardMarkup:
@@ -116,4 +116,4 @@ def get_empty_list_keyboard() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="🔄 Обновить", callback_data="list:refresh")]
     ]
     
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return InlineKeyboardMarkup(buttons)

@@ -1,3 +1,2 @@
-aiogram>=3.0.0
+python-telegram-bot[job-queue]>=22.0.0
 python-dotenv>=1.0.0
-aiofiles>=23.0.0

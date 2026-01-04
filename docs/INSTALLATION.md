@@ -197,10 +197,19 @@ source venv/bin/activate
 
 ### 5.3. Установка Python зависимостей
 
+> [!NOTE]
+> Используем python-telegram-bot вместо aiogram, так как он не требует pydantic-core (который не компилируется на Termux).
+
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+**Что устанавливается:**
+- `python-telegram-bot[job-queue]>=22.0.0` - основная библиотека для Telegram Bot API
+- `python-dotenv>=1.0.0` - загрузка переменных из .env файла
+
+Установка займёт 2-5 минут.
 
 ### 5.4. Создание директорий
 

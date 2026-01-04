@@ -3,10 +3,8 @@
 import asyncio
 from pathlib import Path
 from typing import Optional
-import aiofiles
 
-from aiogram import Bot
-from aiogram.types import File
+from telegram import Bot
 
 from bot.config import config
 from bot.services.file_manager import file_manager
@@ -29,6 +27,8 @@ class DownloadManager:
     ) -> Optional[Path]:
         """
         Download video from Telegram with atomic write.
+        
+        Works for both native video messages and video documents.
         
         Args:
             bot: Bot instance
@@ -58,9 +58,10 @@ class DownloadManager:
         mime_type: Optional[str]
     ) -> Optional[Path]:
         """Internal download implementation with atomic write."""
+        temp_path = None
         try:
             # Get file info from Telegram
-            tg_file: File = await bot.get_file(file_id)
+            tg_file = await bot.get_file(file_id)
             
             # Generate safe filename
             final_filename = file_manager.generate_filename(
@@ -72,9 +73,8 @@ class DownloadManager:
             temp_path = config.tmp_dir / f"{final_filename}.part"
             
             # Download to temp file
-            # With local Bot API server in --local mode, tg_file.file_path
-            # contains the absolute local path, but we still download to control location
-            await bot.download_file(tg_file.file_path, temp_path)
+            # PTB's download_to_drive method handles the actual download
+            await tg_file.download_to_drive(str(temp_path))
             
             # Atomic move to final location
             temp_path.rename(final_path)

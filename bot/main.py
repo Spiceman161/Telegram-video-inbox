@@ -3,12 +3,10 @@
 import asyncio
 import logging
 
-from aiogram import Bot, Dispatcher
-from aiogram.client.session.aiohttp import AiohttpSession
-from aiogram.enums import ParseMode
+from telegram import Update
+from telegram.ext import Application, ContextTypes, filters
 
 from bot.config import config
-from bot.middleware.whitelist import WhitelistMiddleware
 from bot.handlers import commands, messages, callbacks
 from bot.utils.logger import setup_logger
 
@@ -24,33 +22,26 @@ async def main():
     logger.info(f"Shared directory: {config.shared_dir}")
     logger.info(f"Temp directory: {config.tmp_dir}")
     
-    # Create bot session with local API server
-    session = AiohttpSession(api=config.bot_api_url)
-    
-    # Initialize bot
-    bot = Bot(
-        token=config.bot_token,
-        session=session,
-        default={"parse_mode": ParseMode.HTML}
+    # Build application with custom Bot API URL
+    app = (
+        Application.builder()
+        .token(config.bot_token)
+        .base_url(config.bot_api_url)
+        .build()
     )
     
-    # Initialize dispatcher
-    dp = Dispatcher()
-    
-    # Register middleware
-    dp.message.middleware(WhitelistMiddleware(logger))
-    dp.callback_query.middleware(WhitelistMiddleware(logger))
     logger.info(f"Whitelist enabled for user IDs: {config.allowed_user_ids}")
     
-    # Register routers
-    dp.include_router(commands.router)
-    dp.include_router(messages.router)
-    dp.include_router(callbacks.router)
+    # Register handlers (will be implemented in handler modules)
+    commands.register_handlers(app, logger)
+    messages.register_handlers(app, logger)
+    callbacks.register_handlers(app, logger)
+    
     logger.info("Handlers registered")
     
     # Log bot info
     try:
-        bot_info = await bot.get_me()
+        bot_info = await app.bot.get_me()
         logger.info(f"Bot started: @{bot_info.username} (ID: {bot_info.id})")
     except Exception as e:
         logger.error(f"Failed to get bot info: {e}")
@@ -60,9 +51,8 @@ async def main():
     # Start polling
     logger.info("Starting long polling...")
     try:
-        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+        await app.run_polling(allowed_updates=Update.ALL_TYPES)
     finally:
-        await bot.session.close()
         logger.info("Bot stopped")
 
 

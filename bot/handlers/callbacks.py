@@ -2,8 +2,8 @@
 
 import logging
 
-from aiogram import Router, F
-from aiogram.types import CallbackQuery
+from telegram import Update
+from telegram.ext import Application, CallbackQueryHandler, ContextTypes
 
 from bot.config import config
 from bot.services.file_manager import file_manager
@@ -15,24 +15,21 @@ from bot.keyboards.inline import (
 )
 from bot.utils.state import user_state
 from bot.utils.logger import log_event
+from bot.middleware.whitelist import create_whitelist_filter
 
 
-router = Router()
-logger = logging.getLogger(__name__)
-
-
-@router.callback_query(F.data.startswith("page:"))
-async def handle_pagination(callback: CallbackQuery):
+async def handle_pagination(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle pagination callbacks."""
-    await callback.answer()  # CRITICAL: Answer immediately to remove loading spinner
+    query = update.callback_query
+    await query.answer()  # CRITICAL: Answer immediately to remove loading spinner
     
-    user_id = callback.from_user.id
+    user_id = update.effective_user.id
     
     # Parse page number
-    if callback.data == "page:current":
+    if query.data == "page:current":
         return  # Just dismiss the callback
     
-    page = int(callback.data.split(":")[1])
+    page = int(query.data.split(":")[1])
     
     # Get files for page
     files, total_files, total_pages = file_manager.list_files(page=page)
@@ -47,7 +44,7 @@ async def handle_pagination(callback: CallbackQuery):
     
     # Update message
     try:
-        await callback.message.edit_text(
+        await query.edit_message_text(
             text=text,
             reply_markup=keyboard,
             parse_mode="HTML"
@@ -55,21 +52,21 @@ async def handle_pagination(callback: CallbackQuery):
         # Update state
         user_state.update_page(user_id, page)
     except Exception as e:
-        logger.error(f"Error updating pagination: {e}")
+        logging.getLogger(__name__).error(f"Error updating pagination: {e}")
 
 
-@router.callback_query(F.data.startswith("file:"))
-async def handle_file_selection(callback: CallbackQuery):
+async def handle_file_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle file selection callback."""
-    await callback.answer()
+    query = update.callback_query
+    await query.answer()
     
-    file_id = callback.data.split(":")[1]
+    file_id = query.data.split(":")[1]
     
     # Get file info
     file_info = file_manager.get_file_by_id(file_id)
     
     if not file_info:
-        await callback.answer("❌ Файл не найден", show_alert=True)
+        await query.answer("❌ Файл не найден", show_alert=True)
         return
     
     # Build file info message
@@ -83,32 +80,32 @@ async def handle_file_selection(callback: CallbackQuery):
     keyboard = get_file_actions_keyboard(file_id)
     
     try:
-        await callback.message.edit_text(
+        await query.edit_message_text(
             text=text,
             reply_markup=keyboard,
             parse_mode="HTML"
         )
     except Exception as e:
-        logger.error(f"Error showing file actions: {e}")
+        logging.getLogger(__name__).error(f"Error showing file actions: {e}")
 
 
-@router.callback_query(F.data.startswith("download:"))
-async def handle_download(callback: CallbackQuery):
+async def handle_download(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle file download callback."""
-    await callback.answer("⬇️ Готовлю файл к отправке...")
+    query = update.callback_query
+    await query.answer("⬇️ Готовлю файл к отправке...")
     
-    user_id = callback.from_user.id
-    file_id = callback.data.split(":")[1]
+    user_id = update.effective_user.id
+    file_id = query.data.split(":")[1]
     
     # Get file info
     file_info = file_manager.get_file_by_id(file_id)
     
     if not file_info:
-        await callback.answer("❌ Файл не найден", show_alert=True)
+        await query.answer("❌ Файл не найден", show_alert=True)
         return
     
     log_event(
-        logger,
+        logging.getLogger(__name__),
         event="file_sent",
         user_id=user_id,
         filename=file_info.name
@@ -117,35 +114,37 @@ async def handle_download(callback: CallbackQuery):
     try:
         # Send file
         if config.send_as == "video":
-            await callback.message.answer_video(
+            await context.bot.send_video(
+                chat_id=update.effective_chat.id,
                 video=file_info.path,
                 caption=f"📹 {file_info.name}"
             )
         else:
-            await callback.message.answer_document(
+            await context.bot.send_document(
+                chat_id=update.effective_chat.id,
                 document=file_info.path,
                 caption=f"📄 {file_info.name}"
             )
         
-        await callback.answer("✅ Файл отправлен!", show_alert=False)
+        await query.answer("✅ Файл отправлен!", show_alert=False)
         
     except Exception as e:
-        logger.error(f"Error sending file: {e}")
-        await callback.answer("❌ Ошибка при отправке файла", show_alert=True)
+        logging.getLogger(__name__).error(f"Error sending file: {e}")
+        await query.answer("❌ Ошибка при отправке файла", show_alert=True)
 
 
-@router.callback_query(F.data.startswith("delete_ask:"))
-async def handle_delete_ask(callback: CallbackQuery):
+async def handle_delete_ask(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle delete confirmation request."""
-    await callback.answer()
+    query = update.callback_query
+    await query.answer()
     
-    file_id = callback.data.split(":")[1]
+    file_id = query.data.split(":")[1]
     
     # Get file info
     file_info = file_manager.get_file_by_id(file_id)
     
     if not file_info:
-        await callback.answer("❌ Файл не найден", show_alert=True)
+        await query.answer("❌ Файл не найден", show_alert=True)
         return
     
     text = f"""🗑 <b>Удаление файла</b>
@@ -160,26 +159,26 @@ async def handle_delete_ask(callback: CallbackQuery):
     keyboard = get_delete_confirmation_keyboard(file_id)
     
     try:
-        await callback.message.edit_text(
+        await query.edit_message_text(
             text=text,
             reply_markup=keyboard,
             parse_mode="HTML"
         )
     except Exception as e:
-        logger.error(f"Error showing delete confirmation: {e}")
+        logging.getLogger(__name__).error(f"Error showing delete confirmation: {e}")
 
 
-@router.callback_query(F.data.startswith("delete_confirm:"))
-async def handle_delete_confirm(callback: CallbackQuery):
+async def handle_delete_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle delete confirmation."""
-    user_id = callback.from_user.id
-    file_id = callback.data.split(":")[1]
+    query = update.callback_query
+    user_id = update.effective_user.id
+    file_id = query.data.split(":")[1]
     
     # Get file info before deletion
     file_info = file_manager.get_file_by_id(file_id)
     
     if not file_info:
-        await callback.answer("❌ Файл не найден", show_alert=True)
+        await query.answer("❌ Файл не найден", show_alert=True)
         return
     
     filename = file_info.name
@@ -189,13 +188,13 @@ async def handle_delete_confirm(callback: CallbackQuery):
     
     if success:
         log_event(
-            logger,
+            logging.getLogger(__name__),
             event="file_deleted",
             user_id=user_id,
             filename=filename
         )
         
-        await callback.answer("✅ Файл удалён", show_alert=True)
+        await query.answer("✅ Файл удалён", show_alert=True)
         
         # Return to file list
         files, total_files, total_pages = file_manager.list_files(page=0)
@@ -208,23 +207,23 @@ async def handle_delete_confirm(callback: CallbackQuery):
             keyboard = get_file_list_keyboard(files, 0, total_pages)
         
         try:
-            await callback.message.edit_text(
+            await query.edit_message_text(
                 text=text,
                 reply_markup=keyboard,
                 parse_mode="HTML"
             )
         except Exception as e:
-            logger.error(f"Error returning to list after delete: {e}")
+            logging.getLogger(__name__).error(f"Error returning to list after delete: {e}")
     else:
-        await callback.answer("❌ Ошибка при удалении файла", show_alert=True)
+        await query.answer("❌ Ошибка при удалении файла", show_alert=True)
 
 
-@router.callback_query(F.data == "list:refresh")
-async def handle_list_refresh(callback: CallbackQuery):
+async def handle_list_refresh(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle list refresh callback."""
-    await callback.answer("🔄 Обновляю список...")
+    query = update.callback_query
+    await query.answer("🔄 Обновляю список...")
     
-    user_id = callback.from_user.id
+    user_id = update.effective_user.id
     
     # Get files
     files, total_files, total_pages = file_manager.list_files(page=0)
@@ -238,22 +237,22 @@ async def handle_list_refresh(callback: CallbackQuery):
         keyboard = get_file_list_keyboard(files, 0, total_pages)
     
     try:
-        await callback.message.edit_text(
+        await query.edit_message_text(
             text=text,
             reply_markup=keyboard,
             parse_mode="HTML"
         )
         user_state.update_page(user_id, 0)
     except Exception as e:
-        logger.error(f"Error refreshing list: {e}")
+        logging.getLogger(__name__).error(f"Error refreshing list: {e}")
 
 
-@router.callback_query(F.data == "list:back")
-async def handle_list_back(callback: CallbackQuery):
+async def handle_list_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle back to list callback."""
-    await callback.answer()
+    query = update.callback_query
+    await query.answer()
     
-    user_id = callback.from_user.id
+    user_id = update.effective_user.id
     
     # Get current page or default to 0
     live_msg = user_state.get_live_message(user_id)
@@ -271,10 +270,61 @@ async def handle_list_back(callback: CallbackQuery):
         keyboard = get_file_list_keyboard(files, page, total_pages)
     
     try:
-        await callback.message.edit_text(
+        await query.edit_message_text(
             text=text,
             reply_markup=keyboard,
             parse_mode="HTML"
         )
     except Exception as e:
-        logger.error(f"Error returning to list: {e}")
+        logging.getLogger(__name__).error(f"Error returning to list: {e}")
+
+
+def register_handlers(app: Application, logger: logging.Logger):
+    """
+    Register callback query handlers.
+    
+    Args:
+        app: Application instance
+        logger: Logger instance
+    """
+    # Create whitelist filter
+    whitelist = create_whitelist_filter(logger)
+    
+    # Register callback handlers with patterns
+    app.add_handler(CallbackQueryHandler(
+        handle_pagination,
+        pattern="^page:",
+        block=False
+    ))
+    app.add_handler(CallbackQueryHandler(
+        handle_file_selection,
+        pattern="^file:",
+        block=False
+    ))
+    app.add_handler(CallbackQueryHandler(
+        handle_download,
+        pattern="^download:",
+        block=False
+    ))
+    app.add_handler(CallbackQueryHandler(
+        handle_delete_ask,
+        pattern="^delete_ask:",
+        block=False
+    ))
+    app.add_handler(CallbackQueryHandler(
+        handle_delete_confirm,
+        pattern="^delete_confirm:",
+        block=False
+    ))
+    app.add_handler(CallbackQueryHandler(
+        handle_list_refresh,
+        pattern="^list:refresh$",
+        block=False
+    ))
+    app.add_handler(CallbackQueryHandler(
+        handle_list_back,
+        pattern="^list:back$",
+        block=False
+    ))
+    
+    logger.info("Callback handlers registered")

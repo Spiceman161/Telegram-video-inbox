@@ -1,65 +1,62 @@
-"""Whitelist access control middleware."""
+"""Whitelist access control for python-telegram-bot."""
 
-from typing import Any, Awaitable, Callable, Dict
-
-from aiogram import BaseMiddleware
-from aiogram.types import Message, CallbackQuery, TelegramObject
+from typing import Optional
+from telegram import Update
+from telegram.ext import filters
 
 from bot.config import config
 from bot.utils.logger import log_event
 
 
-class WhitelistMiddleware(BaseMiddleware):
+class WhitelistFilter(filters.MessageFilter):
     """
-    Middleware to enforce whitelist access control.
+    Custom filter to check if user is in whitelist.
     
-    Any user not in ALLOWED_USER_IDS is blocked from all operations.
+    This filter allows only users from ALLOWED_USER_IDS.
     """
     
     def __init__(self, logger):
         super().__init__()
         self.logger = logger
     
-    async def __call__(
-        self,
-        handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
-        event: TelegramObject,
-        data: Dict[str, Any]
-    ) -> Any:
-        """
-        Check if user is in whitelist before processing.
+    def filter(self, message) -> bool:
+        """Check if user is in whitelist."""
+        if not message.from_user:
+            return False
         
-        Args:
-            handler: Next handler in chain
-            event: Telegram event (Message or CallbackQuery)
-            data: Handler data
-            
-        Returns:
-            Handler result or None if blocked
-        """
-        user_id = None
+        user_id = message.from_user.id
+        is_allowed = user_id in config.allowed_user_ids
         
-        # Extract user_id from different event types
-        if isinstance(event, Message):
-            user_id = event.from_user.id
-        elif isinstance(event, CallbackQuery):
-            user_id = event.from_user.id
-        
-        # Check whitelist
-        if user_id and user_id not in config.allowed_user_ids:
+        if not is_allowed:
             log_event(
                 self.logger,
                 event="unauthorized_access",
                 user_id=user_id
             )
-            
-            # Send rejection message
-            if isinstance(event, Message):
-                await event.answer("🚫 Доступ запрещён")
-            elif isinstance(event, CallbackQuery):
-                await event.answer("🚫 Доступ запрещён", show_alert=True)
-            
-            return  # Block further processing
         
-        # User is authorized, continue
-        return await handler(event, data)
+        return is_allowed
+
+
+def create_whitelist_filter(logger):
+    """
+    Create a whitelist filter instance.
+    
+    Args:
+        logger: Logger instance for audit logging
+        
+    Returns:
+        WhitelistFilter instance
+    """
+    return WhitelistFilter(logger)
+
+
+async def unauthorized_handler(update: Update, context) -> None:
+    """
+    Handler for unauthorized access attempts.
+    
+    Sends rejection message to users not in whitelist.
+    """
+    if update.message:
+        await update.message.reply_text("🚫 Доступ запрещён")
+    elif update.callback_query:
+        await update.callback_query.answer("🚫 Доступ запрещён", show_alert=True)

@@ -2,19 +2,14 @@
 
 import logging
 
-from aiogram import Router
-from aiogram.filters import Command
-from aiogram.types import Message
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes, filters
 
 from bot.keyboards.reply import get_main_menu
+from bot.middleware.whitelist import create_whitelist_filter
 
 
-router = Router()
-logger = logging.getLogger(__name__)
-
-
-@router.message(Command("start"))
-async def cmd_start(message: Message):
+async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Handle /start command.
     
@@ -37,8 +32,24 @@ async def cmd_start(message: Message):
 
 Готов к работе! 🚀"""
     
-    await message.answer(
+    await update.message.reply_html(
         welcome_text,
-        reply_markup=get_main_menu(),
-        parse_mode="HTML"
+        reply_markup=get_main_menu()
     )
+
+
+def register_handlers(app: Application, logger: logging.Logger):
+    """
+    Register command handlers.
+    
+    Args:
+        app: Application instance
+        logger: Logger instance
+    """
+    # Create whitelist filter
+    whitelist = create_whitelist_filter(logger)
+    
+    # Register /start command with whitelist filter
+    app.add_handler(CommandHandler("start", cmd_start, filters=whitelist))
+    
+    logger.info("Command handlers registered")

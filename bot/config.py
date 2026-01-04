@@ -19,7 +19,8 @@ class Config:
         # Local Bot API Server
         self.telegram_api_id = self._get_required("TELEGRAM_API_ID")
         self.telegram_api_hash = self._get_required("TELEGRAM_API_HASH")
-        self.bot_api_url = os.getenv("BOT_API_URL", "http://localhost:8081")
+        # PTB expects base URL without /bot prefix (it adds it automatically)
+        self.bot_api_url = os.getenv("BOT_API_URL", "http://localhost:8081/bot")
         
         # Access Control
         allowed_ids = self._get_required("ALLOWED_USER_IDS")
