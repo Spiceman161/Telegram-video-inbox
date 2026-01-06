@@ -21,6 +21,19 @@ def main():
     logger.info(f"Shared directory: {config.shared_dir}")
     logger.info(f"Temp directory: {config.tmp_dir}")
     
+    # Check ffmpeg availability (for video metadata extraction)
+    import shutil
+    if shutil.which("ffprobe") is None:
+        logger.warning("="*60)
+        logger.warning("⚠️  ffmpeg/ffprobe is NOT installed!")
+        logger.warning("Video aspect ratio preservation may not work correctly.")
+        logger.warning("Install with: pkg install ffmpeg (Termux)")
+        logger.warning("           or apt install ffmpeg (Debian/Ubuntu)")
+        logger.warning("Or run: ./scripts/install_dependencies.sh")
+        logger.warning("="*60)
+    else:
+        logger.info("✓ ffmpeg/ffprobe is available for video metadata extraction")
+    
     # Build application with custom Bot API URL
     app = (
         Application.builder()

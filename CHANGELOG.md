@@ -12,10 +12,35 @@
   - Использует `ffprobe` для чтения метаданных
   - Обработка ошибок с silent fallback
 
+- **Автоматическая установка зависимостей** (`scripts/install_dependencies.sh`)
+  - Определяет окружение (Termux/Debian/RHEL)
+  - Автоматически устанавливает системные пакеты (Python, Git, **ffmpeg**)
+  - Устанавливает Python зависимости из requirements.txt
+  - Создает необходимые директории (logs/, tmp/)
+  - Настраивает .env файл из .env.example
+  - Проверяет наличие ffmpeg после установки
+
+- **Проверка ffmpeg при запуске** (`bot/main.py`)
+  - При старте бота проверяется наличие ffprobe
+  - Выводится предупреждение, если ffmpeg не установлен
+  - Подсказка по установке (pkg/apt install ffmpeg)
+
 - Документация **`docs/ASPECT_RATIO_FIX.md`**
   - Описание проблемы и решения
   - Технические детали использования ffprobe
   - Инструкции по установке и тестированию
+
+- Документация **`docs/AUTO_INSTALL.md`**
+  - Руководство по использованию автоматической установки
+  - Поддерживаемые платформы
+  - Устранение неполадок
+  - Примеры вывода скрипта
+
+- Дополнительная документация:
+  - **`docs/BUGFIX_SUMMARY.md`** - полная сводка исправления
+  - **`docs/TESTING_ASPECT_RATIO.md`** - руководство по тестированию
+  - **`docs/VISUAL_EXPLANATION.md`** - визуальные диаграммы
+  - **`scripts/test_aspect_ratio_fix.sh`** - тестовый скрипт
 
 ### Изменено
 - **`bot/handlers/callbacks.py`** → функция `handle_download()`:
@@ -49,11 +74,25 @@
 - Это fallback behavior, чтобы не блокировать отправку видео
 
 ### Файлы изменены
+
+**Новый код:**
 - ✅ `bot/utils/video_metadata.py` - NEW
-- ✅ `bot/handlers/callbacks.py` - MODIFIED
+- ✅ `scripts/install_dependencies.sh` - NEW
+- ✅ `scripts/test_aspect_ratio_fix.sh` - NEW
+
+**Измененный код:**
+- ✅ `bot/handlers/callbacks.py` - MODIFIED (handle_download с метаданными)
+- ✅ `bot/main.py` - MODIFIED (добавлена проверка ffmpeg)
+
+**Документация:**
+- ✅ `CHANGELOG.md` - NEW
 - ✅ `docs/ASPECT_RATIO_FIX.md` - NEW
-- ✅ `README.md` - MODIFIED
-- ✅ `docs/INSTALLATION.md` - MODIFIED
+- ✅ `docs/AUTO_INSTALL.md` - NEW
+- ✅ `docs/BUGFIX_SUMMARY.md` - NEW
+- ✅ `docs/TESTING_ASPECT_RATIO.md` - NEW
+- ✅ `docs/VISUAL_EXPLANATION.md` - NEW
+- ✅ `README.md` - MODIFIED (добавлена автоматическая установка)
+- ✅ `docs/INSTALLATION.md` - MODIFIED (добавлена автоматическая установка)
 
 ### Проверка работы
 1. Убедитесь, что ffmpeg установлен: `ffprobe -version`
