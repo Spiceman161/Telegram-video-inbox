@@ -187,21 +187,40 @@ echo ""
 # Build Bot API Server
 print_section "Step 4: Building Telegram Bot API Server"
 
-print_info "This step will take 30-60 minutes on TV-box hardware"
-print_info "The process will:"
-echo "  • Clone telegram-bot-api repository"
-echo "  • Compile the server binary"
-echo "  • Install to ~/.local/bin"
-echo ""
-
-read -p "Start Bot API Server build? (Y/n) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Nn]$ ]]; then
-    print_info "Skipping Bot API Server build"
-    print_info "You'll need to build it manually later (see docs/INSTALLATION.md)"
-    SKIP_BOT_API=1
+# Check if already installed
+if command -v telegram-bot-api &> /dev/null; then
+    print_status "telegram-bot-api is already installed"
+    print_info "Location: $(which telegram-bot-api)"
+    echo ""
+    read -p "Rebuild anyway? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Skipping Bot API Server build"
+        SKIP_BOT_API=1
+    else
+        SKIP_BOT_API=0
+    fi
 else
-    SKIP_BOT_API=0
+    print_info "telegram-bot-api not found, build required"
+    print_info "This step will take 30-60 minutes on TV-box hardware"
+    print_info "The process will:"
+    echo "  • Clone telegram-bot-api repository"
+    echo "  • Compile the server binary"
+    echo "  • Install to ~/.local/bin"
+    echo ""
+    
+    read -p "Start Bot API Server build? (Y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Nn]$ ]]; then
+        print_info "Skipping Bot API Server build"
+        print_info "You'll need to build it manually later (see docs/INSTALLATION.md)"
+        SKIP_BOT_API=1
+    else
+        SKIP_BOT_API=0
+    fi
+fi
+
+if [ $SKIP_BOT_API -eq 0 ]; then
     
     # Check if script exists
     if [ -f "scripts/build_bot_api.sh" ]; then
@@ -241,6 +260,13 @@ fi
 
 echo ""
 
+# Create directories early (needed for logs and temp files)
+print_info "Creating project directories..."
+mkdir -p logs tmp ~/telegram-bot-api-data ~/telegram-bot-api-temp
+print_status "Directories created"
+
+echo ""
+
 # Check if we're in the project directory
 print_section "Step 5: Setting Up Python Environment"
 
@@ -262,23 +288,8 @@ pip install -r requirements.txt --quiet
 print_status "Python dependencies installed"
 echo ""
 
-# Create directories
-print_section "Step 6: Creating Directories"
-
-mkdir -p logs
-mkdir -p tmp
-mkdir -p ~/telegram-bot-api-data
-mkdir -p ~/telegram-bot-api-temp
-
-print_status "Created: logs/"
-print_status "Created: tmp/"
-print_status "Created: ~/telegram-bot-api-data/"
-print_status "Created: ~/telegram-bot-api-temp/"
-
-echo ""
-
 # Configure .env
-print_section "Step 7: Configuration"
+print_section "Step 6: Configuration"
 
 if [ -f ".env" ]; then
     print_info ".env file already exists"
