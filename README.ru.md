@@ -130,6 +130,10 @@ chmod +x scripts/install_dependencies.sh
 После завершения установки:
 
 ```bash
+# Если скрипты не исполняемые (автоустановка делает это автоматически)
+# Выполните только если получаете ошибку "Permission denied":
+chmod +x scripts/*.sh
+
 # Запустите Bot API Server (в первом окне терминала)
 ./scripts/start_bot_api.sh &
 

@@ -130,6 +130,10 @@ The script will:
 After installation completes:
 
 ```bash
+# If scripts are not executable (automated install handles this)
+# Run this only if you get "Permission denied" error:
+chmod +x scripts/*.sh
+
 # Start Bot API Server (in first terminal window)
 ./scripts/start_bot_api.sh &
 

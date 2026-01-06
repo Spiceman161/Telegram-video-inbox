@@ -401,6 +401,13 @@ fi
 
 echo ""
 
+# Make scripts executable
+print_info "Making scripts executable..."
+chmod +x scripts/*.sh 2>/dev/null || true
+print_status "Scripts are ready to use"
+
+echo ""
+
 # Verification
 print_section "System Verification"
 
