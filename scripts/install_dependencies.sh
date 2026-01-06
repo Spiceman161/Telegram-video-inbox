@@ -276,9 +276,13 @@ if [ ! -f "requirements.txt" ]; then
     exit 1
 fi
 
-# Upgrade pip
-print_info "Upgrading pip..."
-python -m pip install --upgrade pip --quiet
+# Upgrade pip (skip in Termux as it's managed by pkg)
+if [ "$ENVIRONMENT" != "termux" ]; then
+    print_info "Upgrading pip..."
+    python -m pip install --upgrade pip --quiet
+else
+    print_info "Skipping pip upgrade (managed by Termux pkg)"
+fi
 
 # Install Python packages
 echo ""
