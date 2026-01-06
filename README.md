@@ -105,7 +105,7 @@ termux-setup-storage
 # 3. Clone the repository
 cd ~
 git clone https://github.com/Spiceman161/Telegram-video-inbox.git
-cd telegram-video-inbox
+cd Telegram-video-inbox
 
 # 4. Run automated installation
 chmod +x scripts/install_dependencies.sh

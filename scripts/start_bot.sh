@@ -4,7 +4,7 @@
 echo "Starting Telegram Video Inbox Bot..."
 
 # Navigate to project directory
-cd ~/telegram-video-inbox
+cd ~/Telegram-video-inbox
 
 # Activate virtual environment if it exists
 if [ -d venv ]; then

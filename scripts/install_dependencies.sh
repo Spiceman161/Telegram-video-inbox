@@ -236,7 +236,7 @@ else
         print_status "Bot API Server built and installed"
     fi
     
-    cd ~/telegram-video-inbox
+    cd ~/Telegram-video-inbox
 fi
 
 echo ""
@@ -429,8 +429,8 @@ echo ""
 
 echo "3. Set up auto-start (optional):"
 echo "   mkdir -p ~/.termux/boot"
-echo "   cp scripts/termux_boot_template.sh ~/.termux/boot/01-telegram-video-inbox.sh"
-echo "   chmod +x ~/.termux/boot/01-telegram-video-inbox.sh"
+echo "   cp scripts/termux_boot_template.sh ~/.termux/boot/01-Telegram-video-inbox.sh"
+echo "   chmod +x ~/.termux/boot/01-Telegram-video-inbox.sh"
 echo ""
 
 print_info "For detailed documentation, see:"
