@@ -2,7 +2,7 @@
 
 import logging
 
-from telegram import Update
+from telegram import Update, Message
 from telegram.ext import Application, CallbackQueryHandler, ContextTypes
 from telegram.error import BadRequest
 
@@ -17,6 +17,75 @@ from bot.keyboards.inline import (
 from bot.utils.state import user_state
 from bot.utils.logger import log_event
 from bot.middleware.whitelist import create_whitelist_filter
+
+
+async def _safe_edit_or_send(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    text: str,
+    reply_markup=None,
+    parse_mode: str = "HTML"
+) -> Message:
+    """
+    Safely edit message or send new one if it's not the last bot message.
+    
+    This prevents editing old messages which is confusing for users.
+    If the message is not the last one, it will be deleted and a new one sent.
+    
+    Args:
+        update: Update object
+        context: Context object
+        text: Message text
+        reply_markup: Inline keyboard markup
+        parse_mode: Parse mode (default HTML)
+        
+    Returns:
+        Message object (edited or new)
+    """
+    query = update.callback_query
+    user_id = update.effective_user.id
+    current_msg_id = query.message.message_id
+    
+    # Check if this is the last live message
+    live_msg = user_state.get_live_message(user_id)
+    is_last_message = live_msg and live_msg[0] == current_msg_id
+    
+    if is_last_message:
+        # This is the last message, safe to edit
+        try:
+            await query.edit_message_text(
+                text=text,
+                reply_markup=reply_markup,
+                parse_mode=parse_mode
+            )
+            return query.message
+        except BadRequest as e:
+            # If edit fails (e.g., message is not modified), fall through to send new
+            if "message is not modified" in str(e).lower():
+                pass
+            else:
+                raise
+    
+    # Not the last message - delete old and send new
+    try:
+        await query.message.delete()
+    except Exception as e:
+        # If deletion fails, log but continue
+        logging.getLogger(__name__).warning(f"Failed to delete old message: {e}")
+    
+    # Send new message
+    new_msg = await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=text,
+        reply_markup=reply_markup,
+        parse_mode=parse_mode
+    )
+    
+    # Update live message tracking
+    page = live_msg[1] if live_msg else 0
+    user_state.set_live_message(user_id, new_msg.message_id, page)
+    
+    return new_msg
 
 
 async def handle_pagination(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -43,19 +112,16 @@ async def handle_pagination(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = f"📁 <b>Inbox</b>\n\nВсего файлов: {total_files}\n\nВыберите файл:"
         keyboard = get_file_list_keyboard(files, page, total_pages)
     
-    # Update message
+    # Update message using safe edit
     try:
-        await query.edit_message_text(
+        await _safe_edit_or_send(
+            update=update,
+            context=context,
             text=text,
-            reply_markup=keyboard,
-            parse_mode="HTML"
+            reply_markup=keyboard
         )
         # Update state
         user_state.update_page(user_id, page)
-    except BadRequest as e:
-        # Ignore "message is not modified" error
-        if "message is not modified" not in str(e).lower():
-            logging.getLogger(__name__).error(f"Error updating pagination: {e}")
     except Exception as e:
         logging.getLogger(__name__).error(f"Error updating pagination: {e}")
 
@@ -85,10 +151,11 @@ async def handle_file_selection(update: Update, context: ContextTypes.DEFAULT_TY
     keyboard = get_file_actions_keyboard(file_id)
     
     try:
-        await query.edit_message_text(
+        await _safe_edit_or_send(
+            update=update,
+            context=context,
             text=text,
-            reply_markup=keyboard,
-            parse_mode="HTML"
+            reply_markup=keyboard
         )
     except Exception as e:
         logging.getLogger(__name__).error(f"Error showing file actions: {e}")
@@ -164,10 +231,11 @@ async def handle_delete_ask(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = get_delete_confirmation_keyboard(file_id)
     
     try:
-        await query.edit_message_text(
+        await _safe_edit_or_send(
+            update=update,
+            context=context,
             text=text,
-            reply_markup=keyboard,
-            parse_mode="HTML"
+            reply_markup=keyboard
         )
     except Exception as e:
         logging.getLogger(__name__).error(f"Error showing delete confirmation: {e}")
@@ -212,10 +280,11 @@ async def handle_delete_confirm(update: Update, context: ContextTypes.DEFAULT_TY
             keyboard = get_file_list_keyboard(files, 0, total_pages)
         
         try:
-            await query.edit_message_text(
+            await _safe_edit_or_send(
+                update=update,
+                context=context,
                 text=text,
-                reply_markup=keyboard,
-                parse_mode="HTML"
+                reply_markup=keyboard
             )
         except Exception as e:
             logging.getLogger(__name__).error(f"Error returning to list after delete: {e}")
@@ -242,16 +311,13 @@ async def handle_list_refresh(update: Update, context: ContextTypes.DEFAULT_TYPE
         keyboard = get_file_list_keyboard(files, 0, total_pages)
     
     try:
-        await query.edit_message_text(
+        await _safe_edit_or_send(
+            update=update,
+            context=context,
             text=text,
-            reply_markup=keyboard,
-            parse_mode="HTML"
+            reply_markup=keyboard
         )
         user_state.update_page(user_id, 0)
-    except BadRequest as e:
-        # Ignore "message is not modified" error
-        if "message is not modified" not in str(e).lower():
-            logging.getLogger(__name__).error(f"Error refreshing list: {e}")
     except Exception as e:
         logging.getLogger(__name__).error(f"Error refreshing list: {e}")
 
@@ -279,15 +345,12 @@ async def handle_list_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = get_file_list_keyboard(files, page, total_pages)
     
     try:
-        await query.edit_message_text(
+        await _safe_edit_or_send(
+            update=update,
+            context=context,
             text=text,
-            reply_markup=keyboard,
-            parse_mode="HTML"
+            reply_markup=keyboard
         )
-    except BadRequest as e:
-        # Ignore "message is not modified" error
-        if "message is not modified" not in str(e).lower():
-            logging.getLogger(__name__).error(f"Error returning to list: {e}")
     except Exception as e:
         logging.getLogger(__name__).error(f"Error returning to list: {e}")
 

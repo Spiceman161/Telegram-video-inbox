@@ -186,7 +186,7 @@ async def handle_inbox(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Handle Inbox button press.
     
-    Shows or updates live file list message.
+    Shows file list message.
     """
     user_id = update.effective_user.id
     
@@ -203,34 +203,12 @@ async def handle_inbox(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = f"📁 <b>Inbox</b>\n\nВсего файлов: {total_files}\n\nВыберите файл:"
         keyboard = get_file_list_keyboard(files, 0, total_pages)
     
-    # Check if live message exists
-    live_msg = user_state.get_live_message(user_id)
-    
-    if live_msg:
-        msg_id, _ = live_msg
-        try:
-            # Update existing message
-            await context.bot.edit_message_text(
-                text=text,
-                chat_id=update.effective_chat.id,
-                message_id=msg_id,
-                reply_markup=keyboard,
-                parse_mode="HTML"
-            )
-        except Exception:
-            # Message doesn't exist anymore, create new one
-            new_msg = await update.message.reply_html(
-                text,
-                reply_markup=keyboard
-            )
-            user_state.set_live_message(user_id, new_msg.message_id, 0)
-    else:
-        # Create new live message
-        new_msg = await update.message.reply_html(
-            text,
-            reply_markup=keyboard
-        )
-        user_state.set_live_message(user_id, new_msg.message_id, 0)
+    # Always create new message
+    new_msg = await update.message.reply_html(
+        text,
+        reply_markup=keyboard
+    )
+    user_state.set_live_message(user_id, new_msg.message_id, 0)
 
 
 async def handle_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
