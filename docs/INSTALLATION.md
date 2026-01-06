@@ -1,330 +1,295 @@
 # Installation Guide - Telegram Video Inbox Bot
 
-Детальная инструкция по установке и настройке бота на Android TV-box в Termux.
+> **[Русская версия](../README.ru.md)** | **[English](../README.md)**
 
-## Содержание
+Complete installation guide for Telegram Video Inbox Bot on Android TV-box in Termux.
 
-1. [Подготовка устройства](#1-подготовка-устройства)
-2. [Установка Termux](#2-установка-termux)
-3. [Установка зависимостей](#3-установка-зависимостей)
-4. [Сборка Bot API Server](#4-сборка-bot-api-server)
-5. [Установка бота](#5-установка-бота)
-6. [Настройка конфигурации](#6-настройка-конфигурации)
-7. [Первый запуск](#7-первый-запуск)
-8. [Настройка автозапуска](#8-настройка-автозапуска)
-9. [Проверка работы](#9-проверка-работы)
-10. [Устранение неполадок](#10-устранение-неполадок)
+## Table of Contents
 
----
-
-## 1. Подготовка устройства
-
-### 1.1. Отключение оптимизации батареи
-
-> [!IMPORTANT]
-> Это критически важно для работы бота в фоне!
-
-**Для всех Android версий:**
-
-1. Откройте **Настройки** → **Приложения**
-2. Найдите приложения:
-   - **Termux**
-   - **Termux:Boot** (установим позже)
-3. Для каждого:
-   - Перейдите в **Батарея** или **Управление батареей**
-   - Выберите **Без ограничений** или **Не оптимизировать**
-
-### 1.2. Проверка доступа к shared storage
-
-Termux должен иметь доступ к shared storage:
-
-```bash
-# Откройте Termux и выполните:
-termux-setup-storage
-# Подтвердите разрешение на экране
-```
-
-Это создаст папку `~/storage` с доступом к `/storage/emulated/0`.
+1. [Prerequisites](#prerequisites)
+2. [Automated Installation (Recommended)](#automated-installation-recommended)
+3. [Manual Installation](#manual-installation)
+4. [Configuration](#configuration)
+5. [First Run](#first-run)
+6. [Auto-start Setup](#auto-start-setup)
+7. [Troubleshooting](#troubleshooting)
 
 ---
 
-## 2. Установка Termux
+## Prerequisites
 
-### 2.1. Источник установки
+### Hardware Requirements
+
+- Android TV-box (tested on X96Q, slimBOXtv)
+- Android 7.0 or higher
+- ARM/ARM64 architecture
+- Minimum 2GB RAM (recommended)
+- Minimum 5GB free storage
+- Internet connection
+
+### Software Requirements
 
 > [!CAUTION]
-> **ОБЯЗАТЕЛЬНО устанавливайте Termux из F-Droid!**
-> Версия из Google Play устарела и несовместима с аддонами.
+> **Install Termux from F-Droid ONLY!**
+> 
+> The Google Play version is outdated and incompatible with add-ons.
 
-**Ссылки:**
-- F-Droid: https://f-droid.org/
-- Termux в F-Droid: https://f-droid.org/packages/com.termux/
-- Termux:Boot: https://f-droid.org/packages/com.termux.boot/
+**Required:**
+- [Termux](https://f-droid.org/packages/com.termux/) from F-Droid
+- [Termux:Boot](https://f-droid.org/packages/com.termux.boot/) from F-Droid
 
-### 2.2. Установка
+### Information to Gather Before Installation
 
-1. Установите **F-Droid** на TV-box
-2. Откройте F-Droid
-3. Найдите и установите:
-   - **Termux**
-   - **Termux:Boot**
+Before starting, collect the following information:
+
+1. **Bot Token** from [@BotFather](https://t.me/BotFather)
+   - Send `/newbot`
+   - Follow the wizard
+   - Save the token (format: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
+
+2. **API Credentials** from https://my.telegram.org
+   - Log in with your phone
+   - Go to "API development tools"
+   - Create application (App title: `TV-box Video Inbox`, Platform: `Other`)
+   - Save **api_id** (number) and **api_hash** (32-character string)
+
+3. **Your Telegram User ID** from [@userinfobot](https://t.me/userinfobot)
+   - Send any message
+   - Save the user ID number
 
 ---
 
-## 3. Установка зависимостей
+## Automated Installation (Recommended)
 
-> [!TIP]
-> **Быстрая автоматическая установка**: Вы можете использовать автоматический скрипт установки вместо ручной установки зависимостей:
-> ```bash
-> cd ~/telegram-video-inbox
-> chmod +x scripts/install_dependencies.sh
-> ./scripts/install_dependencies.sh
-> ```
-> Скрипт установит все системные пакеты (Python, Git, ffmpeg и т.д.) и Python зависимости автоматически.
-> Если вы используете скрипт, можете пропустить шаги 3.1-3.2 и перейти к шагу 4.
+The automated installer handles everything: dependencies, Bot API Server compilation, and configuration.
 
-### 3.1. Обновление пакетов Termux
+### 1. Disable Battery Optimization
+
+> [!IMPORTANT]
+> This is critical for background operation!
+
+1. Open **Settings** → **Apps**
+2. Find **Termux** and **Termux:Boot**
+3. For each app:
+   - Go to **Battery** or **Battery Management**
+   - Select **Unrestricted** or **Don't optimize**
+
+### 2. Grant Storage Access
+
+Open Termux and run:
 
 ```bash
-# Обновить список пакетов
-pkg update
+termux-setup-storage
+```
 
-# Обновить установленные пакеты
+Allow the permission when prompted. This creates `~/storage` with access to `/storage/emulated/0`.
+
+### 3. Clone Repository
+
+```bash
+cd ~
+git clone https://github.com/Spiceman161/Telegram-video-inbox.git
+cd telegram-video-inbox
+```
+
+### 4. Run Installation Script
+
+```bash
+chmod +x scripts/install_dependencies.sh
+./scripts/install_dependencies.sh
+```
+
+The script will:
+1. Detect your environment
+2. Install system packages (Python, Git, ffmpeg, build tools) - **~5 minutes**
+3. Build Telegram Bot API Server from source - **~45-60 minutes**
+4. Install Python dependencies - **~3 minutes**
+5. Create required directories
+6. Guide you through configuration (interactive prompts)
+
+> [!NOTE]
+> Total time: **~50-70 minutes** depending on your hardware.
+
+### 5. During Installation
+
+You'll be prompted to enter:
+
+```
+Enter your Bot Token (from @BotFather):
+> 123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+
+Enter your API ID (from my.telegram.org):
+> 12345678
+
+Enter your API Hash (from my.telegram.org):
+> abcdef1234567890abcdef1234567890
+
+Enter your Telegram User ID (from @userinfobot):
+> 123456789
+
+Enter path for video storage [/storage/emulated/0/Movies/TelegramInbox]:
+> (press Enter for default)
+```
+
+The configuration will be saved to `.env` file.
+
+---
+
+## Manual Installation
+
+For advanced users who prefer manual control.
+
+### 1. Update Termux Packages
+
+```bash
+pkg update
 pkg upgrade
 ```
 
-### 3.2. Установка базовых инструментов (ручная установка)
+### 2. Install System Dependencies
 
 ```bash
-# Python, Git и ffmpeg
+# Runtime dependencies
 pkg install python git ffmpeg
 
-# Инструменты для сборки Bot API server
-pkg install cmake ninja openssl zlib gperf
-
-# Компилятор C++
-pkg install clang
-
-# Утилиты
-pkg install wget curl
+# Build tools for Bot API Server
+pkg install cmake ninja openssl zlib gperf clang wget curl
 ```
 
-Установка займет 5-15 минут в зависимости от интернета.
+### 3. Build Telegram Bot API Server
 
-> [!NOTE]
-> **ffmpeg** обязателен для корректной работы с видео метаданными.
-> Без ffmpeg видео может отправляться с искаженным соотношением сторон.
-> Бот выдаст предупреждение при запуске, если ffmpeg не установлен.
+```bash
+# Use the dedicated build script
+chmod +x scripts/build_bot_api.sh
+./scripts/build_bot_api.sh
+```
 
----
-
-## 4. Сборка Bot API Server
-
-### 4.1. Получение API credentials
-
-1. Откройте https://my.telegram.org
-2. Войдите с вашим номером телефона
-3. Перейдите в **API development tools**
-4. Создайте новое приложение:
-   - **App title**: `TV-box Video Inbox`
-   - **Short name**: `tvbox`
-   - **Platform**: `Other`
-5. Сохраните:
-   - **api_id** (число)
-   - **api_hash** (строка)
-
-### 4.2. Клонирование исходников
+Or manually:
 
 ```bash
 cd ~
 git clone --recursive https://github.com/tdlib/telegram-bot-api.git
 cd telegram-bot-api
-```
 
-### 4.3. Сборка
-
-> [!WARNING]
-> Сборка займет 30-60 минут на слабом устройстве!
-
-```bash
-# Создать директорию сборки
 mkdir build
 cd build
 
-# Настроить CMake
 cmake -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_INSTALL_PREFIX:PATH=.. \
       -GNinja \
       ..
 
-# Собрать (используем 2 потока для слабых устройств)
 cmake --build . --target install -j2
-```
 
-### 4.4. Проверка сборки
-
-```bash
-# Вернуться в корень
-cd ~/telegram-bot-api
-
-# Проверить наличие бинарника
-ls -lh bin/telegram-bot-api
-
-# Должен быть исполняемый файл ~30-50 MB
-```
-
-### 4.5. Установка в PATH
-
-```bash
-# Скопировать в ~/.local/bin (или создать симлинк)
+# Install to PATH
 mkdir -p ~/.local/bin
 cp ~/telegram-bot-api/bin/telegram-bot-api ~/.local/bin/
+chmod +x ~/.local/bin/telegram-bot-api
 
-# Добавить в PATH (если еще нет)
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
+```
 
-# Проверка
+Verify:
+
+```bash
 which telegram-bot-api
-# Должно вывести: /data/data/com.termux/files/home/.local/bin/telegram-bot-api
+# Should output: /data/data/com.termux/files/home/.local/bin/telegram-bot-api
 ```
 
----
-
-## 5. Установка бота
-
-### 5.1. Клонирование репозитория
+### 4. Install Bot Dependencies
 
 ```bash
-cd ~
-git clone <URL_вашего_репозитория> telegram-video-inbox
-cd telegram-video-inbox
-```
+cd ~/telegram-video-inbox
 
-Если репозитория еще нет, скопируйте файлы вручную.
+# Upgrade pip
+python -m pip install --upgrade pip
 
-### 5.2. Создание виртуального окружения (опционально)
-
-```bash
-python -m venv venv
-source venv/bin/activate
-```
-
-### 5.3. Установка Python зависимостей
-
-> [!NOTE]
-> Используем python-telegram-bot вместо aiogram, так как он не требует pydantic-core (который не компилируется на Termux).
-
-```bash
-pip install --upgrade pip
+# Install packages
 pip install -r requirements.txt
 ```
 
-**Что устанавливается:**
-- `python-telegram-bot[job-queue]>=22.0.0` - основная библиотека для Telegram Bot API
-- `python-dotenv>=1.0.0` - загрузка переменных из .env файла
-
-Установка займёт 2-5 минут.
-
-### 5.4. Создание директорий
+### 5. Create Directories
 
 ```bash
-# Логи
-mkdir -p logs
-
-# Временные файлы
-mkdir -p tmp
-
-# Данные Bot API server
+mkdir -p logs tmp
 mkdir -p ~/telegram-bot-api-data
 mkdir -p ~/telegram-bot-api-temp
-
-# Shared storage (настройте путь под ваше устройство)
-mkdir -p ~/storage/shared/Movies/TelegramInbox
 ```
 
 ---
 
-## 6. Настройка конфигурации
+## Configuration
 
-### 6.1. Создание .env файла
+### Create .env File
 
 ```bash
 cp .env.example .env
-nano .env  # или vim, или любой редактор
+nano .env  # or vim, or any editor
 ```
 
-### 6.2. Заполнение параметров
-
-**Обязательные параметры:**
+### Required Parameters
 
 ```env
-# 1. Токен бота от @BotFather
-# Создайте бота: /newbot в @BotFather
+# Bot token from @BotFather
 BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
 
-# 2. API credentials от my.telegram.org (из шага 4.1)
+# API credentials from my.telegram.org
 TELEGRAM_API_ID=12345678
 TELEGRAM_API_HASH=abcdef1234567890abcdef1234567890
 
-# 3. Ваш Telegram user ID
-# Узнайте у @userinfobot
+# Whitelist (your Telegram user ID from @userinfobot)
 ALLOWED_USER_IDS=123456789
 
-# 4. Путь к папке для видео
-# Должна быть доступна media player'у!
+# Video storage path (must be accessible by media player)
 SHARED_DIR=/storage/emulated/0/Movies/TelegramInbox
 
-# 5. Временная папка
+# Temporary directory
 TMP_DIR=/data/data/com.termux/files/home/telegram-video-inbox/tmp
 ```
 
-**Опциональные параметры** (можно оставить по умолчанию):
+### Optional Parameters
 
 ```env
-PAGE_SIZE=10
-MAX_CONCURRENT_DOWNLOADS=2
-SEND_AS=document
+PAGE_SIZE=10                    # Files per page
+MAX_CONCURRENT_DOWNLOADS=2      # Parallel downloads
+SEND_AS=video                   # or 'document'
 LOG_LEVEL=INFO
 LOG_PATH=/data/data/com.termux/files/home/telegram-video-inbox/logs/bot.log
 ```
 
-### 6.3. Проверка путей
+### Create Shared Directory
 
 ```bash
-# Убедитесь, что SHARED_DIR существует и доступен
-ls -la /storage/emulated/0/Movies/TelegramInbox
-
-# Если нет - создайте
 mkdir -p /storage/emulated/0/Movies/TelegramInbox
 ```
 
 ---
 
-## 7. Первый запуск
+## First Run
 
-### 7.1. Миграция бота на локальный сервер
+### Migrate Bot to Local Server
 
 > [!CAUTION]
-> Если бот ранее работал через cloud API, нужно выполнить logout!
+> If your bot previously used cloud API, you must log out first!
 
 ```bash
-# Выполните запрос (замените YOUR_BOT_TOKEN)
+# Replace YOUR_BOT_TOKEN with your actual token
 curl "https://api.telegram.org/botYOUR_BOT_TOKEN/logOut"
 
-# Должен вернуть: {"ok":true,"result":true}
+# Should return: {"ok":true,"result":true}
 ```
 
-### 7.2. Запуск Bot API Server
+### Start Bot API Server
 
-Откройте **первую** сессию Termux (или используйте tmux/screen):
+Open **first** Termux session (or use tmux/screen):
 
 ```bash
 cd ~/telegram-video-inbox
 ./scripts/start_bot_api.sh
 ```
 
-**Ожидаемый вывод:**
+**Expected output:**
 
 ```
 Starting Telegram Bot API server...
@@ -333,39 +298,37 @@ API ID: 12345678
 [Timestamp] [JOB 1] [info] Listening on http://0.0.0.0:8081
 ```
 
-Если видите ошибки - проверьте TELEGRAM_API_ID и TELEGRAM_API_HASH.
+### Start Bot
 
-### 7.3. Запуск бота
-
-Откройте **вторую** сессию Termux (свайп с левого края → New session):
+Open **second** Termux session:
 
 ```bash
 cd ~/telegram-video-inbox
 ./scripts/start_bot.sh
 ```
 
-**Ожидаемый вывод:**
+**Expected output:**
 
 ```
 Starting Telegram Video Inbox Bot...
-2026-01-04 12:00:00 | INFO     | Starting Telegram Video Inbox Bot...
-2026-01-04 12:00:00 | INFO     | Shared directory: /storage/emulated/0/Movies/TelegramInbox
-2026-01-04 12:00:01 | INFO     | Bot started: @your_bot_username (ID: 123456789)
-2026-01-04 12:00:01 | INFO     | Starting long polling...
+2026-01-06 12:00:00 | INFO     | Starting Telegram Video Inbox Bot...
+2026-01-06 12:00:00 | INFO     | Shared directory: /storage/emulated/0/Movies/TelegramInbox
+2026-01-06 12:00:01 | INFO     | Bot started: @your_bot_username (ID: 123456789)
+2026-01-06 12:00:01 | INFO     | Starting long polling...
 ```
 
-### 7.4. Первая проверка
+### Test the Bot
 
-1. Откройте Telegram на телефоне
-2. Найдите вашего бота
-3. Отправьте `/start`
-4. Должны увидеть приветствие и кнопки меню
+1. Open Telegram on your phone
+2. Find your bot
+3. Send `/start` - you should see the welcome message
+4. Send a video - it should be saved to your TV-box
 
 ---
 
-## 8. Настройка автозапуска
+## Auto-start Setup
 
-### 8.1. Копирование boot скрипта
+### Copy Boot Script
 
 ```bash
 mkdir -p ~/.termux/boot
@@ -373,242 +336,159 @@ cp scripts/termux_boot_template.sh ~/.termux/boot/01-telegram-video-inbox.sh
 chmod +x ~/.termux/boot/01-telegram-video-inbox.sh
 ```
 
-### 8.2. Активация Termux:Boot
+### Activate Termux:Boot
 
-1. Откройте приложение **Termux:Boot** хотя бы раз
-2. Это активирует его в системе
-3. Закройте приложение
+1. Open **Termux:Boot** app at least once
+2. This activates it in the system
+3. Close the app
 
-### 8.3. Редактирование boot скрипта (если нужно)
-
-Если проект установлен НЕ в `~/telegram-video-inbox`:
+### Test Auto-start
 
 ```bash
-nano ~/.termux/boot/01-telegram-video-inbox.sh
-
-# Измените пути:
-~/your-custom-path/scripts/start_bot_api.sh &
-~/your-custom-path/scripts/start_bot.sh &
-```
-
-### 8.4. Тестирование автозапуска
-
-```bash
-# Перезагрузите устройство
+# Reboot device
 reboot
 
-# Через ~60 секунд после загрузки проверьте процессы
+# After ~60 seconds, check processes
 ps aux | grep telegram
 
-# Должны увидеть:
+# Should see:
 # telegram-bot-api
 # python bot/main.py
 ```
 
 ---
 
-## 9. Проверка работы
+## Troubleshooting
 
-### 9.1. Базовые функции
+### Bot API Server Won't Start
 
-✅ **Отправка видео:**
-1. Отправьте любое видео боту
-2. Получите подтверждение "✅ Видео сохранено!"
-3. Проверьте наличие файла:
-   ```bash
-   ls -lh /storage/emulated/0/Movies/TelegramInbox/
-   ```
-
-✅ **Просмотр списка:**
-1. Нажмите кнопку **📥 Inbox**
-2. Должен появиться список файлов
-
-✅ **Скачивание:**
-1. Выберите файл
-2. Нажмите **⬇️ Скачать**
-3. Получите файл в Telegram
-
-✅ **Удаление:**
-1. Выберите файл
-2. Нажмите **🗑 Удалить**
-3. Подтвердите
-4. Проверьте, что файл исчез из ФС
-
-✅ **Статус:**
-1. Нажмите **⬆️ Статус**
-2. Должна показаться информация о диске
-
-### 9.2. Тест whitelist
-
-Попросите друга (не в whitelist) написать боту.
-Он должен получить "🚫 Доступ запрещён".
-
-### 9.3. Просмотр логов
-
-```bash
-# Логи бота
-tail -f ~/telegram-video-inbox/logs/bot.log
-
-# Логи Bot API server
-tail -f ~/telegram-video-inbox/logs/bot-api.log
-```
-
----
-
-## 10. Устранение неполадок
-
-### Проблема: Bot API server не запускается
-
-**Симптомы:**
+**Symptoms:**
 ```
 [ERROR] Invalid api_id/api_hash
 ```
 
-**Решение:**
-1. Проверьте `.env` файл
-2. Убедитесь, что `TELEGRAM_API_ID` - это число без кавычек
-3. `TELEGRAM_API_HASH` должен быть строкой из 32 символов
+**Solution:**
+1. Check `.env` file
+2. Ensure `TELEGRAM_API_ID` is a number (no quotes)
+3. Ensure `TELEGRAM_API_HASH` is 32 characters
 
----
+### "Failed to get bot info"
 
-### Проблема: "Failed to get bot info"
-
-**Симптомы:**
+**Symptoms:**
 ```
 ERROR | Failed to get bot info
 ERROR | Make sure local Bot API server is running!
 ```
 
-**Решение:**
-1. Убедитесь, что Bot API server запущен:
+**Solution:**
+1. Check Bot API server is running:
    ```bash
    ps aux | grep telegram-bot-api
    ```
-2. Проверьте, что доступен порт 8081:
+2. Check port 8081 is accessible:
    ```bash
    curl http://localhost:8081
    ```
-3. Проверьте логи Bot API server
+3. Check Bot API server logs:
+   ```bash
+   tail -f ~/telegram-video-inbox/logs/bot-api.log
+   ```
 
----
+### Videos Not Saving
 
-### Проблема: Видео не сохраняются
-
-**Решение:**
-1. Проверьте права доступа:
+**Solution:**
+1. Check permissions:
    ```bash
    ls -ld /storage/emulated/0/Movies/TelegramInbox
    ```
-2. Попробуйте создать файл вручную:
+2. Try creating a file manually:
    ```bash
    touch /storage/emulated/0/Movies/TelegramInbox/test.txt
    ```
-3. Проверьте свободное место:
+3. Check free space:
    ```bash
    df -h /storage/emulated/0
    ```
-4. Проверьте логи:
+4. Check logs:
    ```bash
    grep "download_failed" ~/telegram-video-inbox/logs/bot.log
    ```
 
----
+### After Reboot, Bot Doesn't Start
 
-### Проблема: После перезагрузки не запускается
-
-**Решение:**
-1. Проверьте battery optimization (шаг 1.1)
-2. Убедитесь, что Termux:Boot был открыт хотя бы раз
-3. Проверьте boot скрипт:
+**Solution:**
+1. Verify battery optimization is disabled (step 1 of auto-start)
+2. Ensure Termux:Boot was opened at least once
+3. Check boot script:
    ```bash
    ls -la ~/.termux/boot/
    cat ~/.termux/boot/01-telegram-video-inbox.sh
    ```
-4. Проверьте логи Android (если есть ADB):
-   ```bash
-   adb logcat | grep Termux
-   ```
 
----
+### Large File Won't Upload
 
-### Проблема: Большой файл не загружается
+**Cause:** Possibly using cloud API instead of local.
 
-**Причина:** Возможно, используется cloud API вместо локального.
+**Solution:**
+1. Verify Bot API server is running with `--local` flag
+2. Check `config.bot_api_url` in bot configuration
+3. Ensure you ran `logOut` (First Run section)
 
-**Решение:**
-1. Проверьте, что Bot API server запущен с `--local`
-2. Проверьте `config.bot_api_url` в `.env`:
-   ```env
-   # Должно быть (по умолчанию):
-   # bot_api_url=http://localhost:8081
-   ```
-3. Убедитесь, что выполнили `logOut` (шаг 7.1)
+### "Permission denied" Writing Files
 
----
-
-### Проблема: "Permission denied" при записи
-
-**Решение:**
-1. Проверьте, что Storage Permission разрешено:
+**Solution:**
+1. Verify storage permission:
    ```bash
    termux-setup-storage
    ```
-2. Попробуйте альтернативный путь:
+2. Try alternative path:
    ```env
    SHARED_DIR=/data/data/com.termux/files/home/storage/shared/Movies/TelegramInbox
    ```
 
 ---
 
-## Дополнительные советы
+## Additional Tips
 
-### Использование tmux/screen
-
-Для удобного управления сессиями:
+### Using tmux for Session Management
 
 ```bash
-# Установить tmux
+# Install tmux
 pkg install tmux
 
-# Создать сессию
+# Create session
 tmux new -s telegram
 
-# В tmux:
-# Ctrl+B затем C - новое окно
-# Ctrl+B затем N - следующее окно
-# Ctrl+B затем D - отсоединиться
+# In tmux:
+# Ctrl+B then C - new window
+# Ctrl+B then N - next window
+# Ctrl+B then D - detach
 
-# Подключиться обратно
+# Reattach
 tmux attach -t telegram
 ```
 
-### Мониторинг ресурсов
+### Monitoring Resources
 
 ```bash
-# CPU и память
+# CPU and memory
 top
 
-# Размер папки
+# Directory size
 du -sh /storage/emulated/0/Movies/TelegramInbox
 ```
 
-### Резервное копирование конфигурации
+### Backup Configuration
 
 ```bash
-# Сделайте бэкап .env
+# Backup .env
 cp ~/telegram-video-inbox/.env ~/telegram-video-inbox/.env.backup
 ```
 
----
-
-## Готово! 🎉
-
-Ваш Telegram Video Inbox Bot настроен и готов к работе!
-
-**Полезные команды:**
+### Useful Commands
 
 ```bash
-# Перезапуск бота (без перезагрузки устройства)
+# Restart bot (without device reboot)
 pkill -f "python bot/main.py"
 pkill telegram-bot-api
 cd ~/telegram-video-inbox
@@ -616,12 +496,21 @@ cd ~/telegram-video-inbox
 sleep 5
 ./scripts/start_bot.sh &
 
-# Просмотр активных процессов
+# View active processes
 ps aux | grep telegram
 
-# Очистка логов
+# Clear logs
 > ~/telegram-video-inbox/logs/bot.log
 > ~/telegram-video-inbox/logs/bot-api.log
 ```
 
-Если возникли вопросы - обратитесь к [README.md](../README.md) или проверьте Issues в репозитории.
+---
+
+## Done! 🎉
+
+Your Telegram Video Inbox Bot is now set up and ready to use!
+
+For questions or issues, check:
+- [README.md](../README.md) - Overview
+- [PRD.md](PRD.md) - Project requirements
+- GitHub Issues - Report bugs
