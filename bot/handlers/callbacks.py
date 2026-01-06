@@ -186,11 +186,31 @@ async def handle_download(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         # Send file
         if config.send_as == "video":
-            await context.bot.send_video(
-                chat_id=update.effective_chat.id,
-                video=file_info.path,
-                caption=f"📹 {file_info.name}"
-            )
+            # Import video metadata utility
+            from bot.utils.video_metadata import get_video_metadata
+            
+            # Extract video metadata to preserve aspect ratio
+            metadata = get_video_metadata(file_info.path)
+            
+            if metadata:
+                # Send with explicit dimensions and duration to prevent aspect ratio distortion
+                await context.bot.send_video(
+                    chat_id=update.effective_chat.id,
+                    video=file_info.path,
+                    caption=f"📹 {file_info.name}",
+                    width=metadata['width'],
+                    height=metadata['height'],
+                    duration=metadata.get('duration'),
+                    supports_streaming=True
+                )
+            else:
+                # Fallback: send without metadata if extraction fails
+                await context.bot.send_video(
+                    chat_id=update.effective_chat.id,
+                    video=file_info.path,
+                    caption=f"📹 {file_info.name}",
+                    supports_streaming=True
+                )
         else:
             await context.bot.send_document(
                 chat_id=update.effective_chat.id,

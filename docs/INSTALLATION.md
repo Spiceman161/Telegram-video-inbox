@@ -86,8 +86,8 @@ pkg upgrade
 ### 3.2. Установка базовых инструментов
 
 ```bash
-# Python и Git
-pkg install python git
+# Python, Git и ffmpeg
+pkg install python git ffmpeg
 
 # Инструменты для сборки Bot API server
 pkg install cmake ninja openssl zlib gperf
