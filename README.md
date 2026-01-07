@@ -210,14 +210,15 @@ BOT_TOKEN=your_bot_token_here
 TELEGRAM_API_ID=your_api_id
 TELEGRAM_API_HASH=your_api_hash
 
-# Whitelist (your Telegram user ID from @userinfobot)
+# Whitelist (comma-separated Telegram user IDs from @userinfobot)
+# You can add multiple users: ALLOWED_USER_IDS=123456789,987654321
 ALLOWED_USER_IDS=123456789
 
 # Path to video folder (shared storage)
 SHARED_DIR=/storage/emulated/0/Movies/TelegramInbox
 
 # Temporary folder
-TMP_DIR=/data/data/com.termux/files/home/telegram-video-inbox/tmp
+TMP_DIR=/data/data/com.termux/files/home/Telegram-video-inbox/tmp
 ```
 
 ### Optional Parameters
@@ -233,48 +234,129 @@ LOG_LEVEL=INFO
 
 ### Bot doesn't respond
 
+**Diagnostics:**
+
 ```bash
-# Check if Bot API server is running
+# 1. Check if Bot API server is running
 ps aux | grep telegram-bot-api
 
-# Check if bot is running
-ps aux | grep "python.*main.py"
+# 2. Check if bot is running  
+ps aux | grep "python.*bot.main"
 
-# Check logs
-tail -f ~/telegram-video-inbox/logs/bot.log
+# 3. Check recent logs
+tail -50 ~/Telegram-video-inbox/logs/bot.log
+tail -50 ~/Telegram-video-inbox/logs/bot-api.log
+```
+
+**If bot is not running:**
+
+```bash
+cd ~/Telegram-video-inbox
+./scripts/start_bot_api.sh &
+sleep 5
+./scripts/start_bot.sh &
 ```
 
 ### "Failed to get bot info"
 
-Bot API server is not running or unreachable on port 8081.
+**Cause:** Bot API server is not running or unreachable on port 8081.
+
+**Solution:**
 
 ```bash
+# Check Bot API server logs
+tail -50 ~/Telegram-video-inbox/logs/bot-api.log
+
+# Check if port is in use
+netstat -tulpn | grep 8081
+
 # Restart Bot API server
+pkill telegram-bot-api
 ./scripts/start_bot_api.sh &
 ```
 
 ### Videos not saving
 
+**Diagnostics:**
+
 ```bash
-# Check permissions
+# 1. Check storage permissions
 ls -ld /storage/emulated/0/Movies/TelegramInbox
 
-# Check free space
+# 2. Check free space
 df -h /storage/emulated/0
 
-# Check logs
-grep "download_failed" ~/telegram-video-inbox/logs/bot.log
+# 3. Check download errors in logs
+grep -i "error\|failed" ~/Telegram-video-inbox/logs/bot.log | tail -20
+
+# 4. Check specific download failures
+grep "download_failed" ~/Telegram-video-inbox/logs/bot.log
 ```
 
 ### After reboot, bot doesn't start
 
-1. Ensure battery optimization is disabled
-2. Check that Termux:Boot was opened at least once
-3. Verify boot script:
+**Diagnostics:**
+
+```bash
+# 1. Check boot script logs
+cat ~/boot_debug.log
+
+# 2. Check if boot script exists and is executable
+ls -la ~/.termux/boot/01-Telegram-video-inbox.sh
+
+# 3. Check bot logs from boot
+tail -50 ~/Telegram-video-inbox/logs/bot-boot.log
+```
+
+**Common issues:**
+
+1. **Battery optimization not disabled**
+   - Settings → Apps → Termux → Battery → Unrestricted
+   - Settings → Apps → Termux:Boot → Battery → Unrestricted
+
+2. **Termux:Boot not activated**
+   - Open Termux:Boot app at least once
+
+3. **Script errors**
    ```bash
-   ls -la ~/.termux/boot/
-   cat ~/.termux/boot/01-telegram-video-inbox.sh
+   # Test boot script manually
+   bash ~/.termux/boot/01-Telegram-video-inbox.sh
+   # Check for errors
    ```
+
+4. **PATH issues**
+   ```bash
+   # Check if telegram-bot-api is in PATH
+   which telegram-bot-api
+   # Should output: /data/data/com.termux/files/home/.local/bin/telegram-bot-api
+   ```
+
+### Checking all logs at once
+
+```bash
+# Quick status check
+echo "=== Bot Process ===" && ps aux | grep "python.*bot.main" && \
+echo "=== API Server ===" && ps aux | grep telegram-bot-api && \
+echo "=== Recent Bot Log ===" && tail -10 ~/Telegram-video-inbox/logs/bot.log && \
+echo "=== Recent API Log ===" && tail -10 ~/Telegram-video-inbox/logs/bot-api.log
+```
+
+### Manual restart
+
+```bash
+# Stop everything
+pkill -f "python.*bot.main"
+pkill telegram-bot-api
+
+# Start fresh
+cd ~/Telegram-video-inbox
+./scripts/start_bot_api.sh &
+sleep 5
+./scripts/start_bot.sh &
+
+# Monitor logs
+tail -f logs/bot.log
+```
 
 ## Security
 

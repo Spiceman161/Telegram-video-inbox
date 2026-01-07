@@ -89,7 +89,7 @@ Allow the permission when prompted. This creates `~/storage` with access to `/st
 ```bash
 cd ~
 git clone https://github.com/Spiceman161/Telegram-video-inbox.git
-cd telegram-video-inbox
+cd Telegram-video-inbox
 ```
 
 ### 4. Run Installation Script
@@ -200,7 +200,7 @@ which telegram-bot-api
 ### 4. Install Bot Dependencies
 
 ```bash
-cd ~/telegram-video-inbox
+cd ~/Telegram-video-inbox
 
 # Upgrade pip
 python -m pip install --upgrade pip
@@ -245,7 +245,7 @@ ALLOWED_USER_IDS=123456789
 SHARED_DIR=/storage/emulated/0/Movies/TelegramInbox
 
 # Temporary directory
-TMP_DIR=/data/data/com.termux/files/home/telegram-video-inbox/tmp
+TMP_DIR=/data/data/com.termux/files/home/Telegram-video-inbox/tmp
 ```
 
 ### Optional Parameters
@@ -255,7 +255,7 @@ PAGE_SIZE=10                    # Files per page
 MAX_CONCURRENT_DOWNLOADS=2      # Parallel downloads
 SEND_AS=video                   # or 'document'
 LOG_LEVEL=INFO
-LOG_PATH=/data/data/com.termux/files/home/telegram-video-inbox/logs/bot.log
+LOG_PATH=/data/data/com.termux/files/home/Telegram-video-inbox/logs/bot.log
 ```
 
 ### Create Shared Directory
@@ -285,7 +285,7 @@ curl "https://api.telegram.org/botYOUR_BOT_TOKEN/logOut"
 Open **first** Termux session (or use tmux/screen):
 
 ```bash
-cd ~/telegram-video-inbox
+cd ~/Telegram-video-inbox
 ./scripts/start_bot_api.sh
 ```
 
@@ -303,7 +303,7 @@ API ID: 12345678
 Open **second** Termux session:
 
 ```bash
-cd ~/telegram-video-inbox
+cd ~/Telegram-video-inbox
 ./scripts/start_bot.sh
 ```
 
@@ -391,7 +391,7 @@ ERROR | Make sure local Bot API server is running!
    ```
 3. Check Bot API server logs:
    ```bash
-   tail -f ~/telegram-video-inbox/logs/bot-api.log
+   tail -f ~/Telegram-video-inbox/logs/bot-api.log
    ```
 
 ### Videos Not Saving
@@ -411,7 +411,7 @@ ERROR | Make sure local Bot API server is running!
    ```
 4. Check logs:
    ```bash
-   grep "download_failed" ~/telegram-video-inbox/logs/bot.log
+   grep "download_failed" ~/Telegram-video-inbox/logs/bot.log
    ```
 
 ### After Reboot, Bot Doesn't Start
@@ -482,7 +482,7 @@ du -sh /storage/emulated/0/Movies/TelegramInbox
 
 ```bash
 # Backup .env
-cp ~/telegram-video-inbox/.env ~/telegram-video-inbox/.env.backup
+cp ~/Telegram-video-inbox/.env ~/Telegram-video-inbox/.env.backup
 ```
 
 ### Useful Commands
@@ -491,7 +491,7 @@ cp ~/telegram-video-inbox/.env ~/telegram-video-inbox/.env.backup
 # Restart bot (without device reboot)
 pkill -f "python bot/main.py"
 pkill telegram-bot-api
-cd ~/telegram-video-inbox
+cd ~/Telegram-video-inbox
 ./scripts/start_bot_api.sh &
 sleep 5
 ./scripts/start_bot.sh &
@@ -500,8 +500,8 @@ sleep 5
 ps aux | grep telegram
 
 # Clear logs
-> ~/telegram-video-inbox/logs/bot.log
-> ~/telegram-video-inbox/logs/bot-api.log
+> ~/Telegram-video-inbox/logs/bot.log
+> ~/Telegram-video-inbox/logs/bot-api.log
 ```
 
 ---

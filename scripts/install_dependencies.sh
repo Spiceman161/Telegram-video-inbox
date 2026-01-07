@@ -329,7 +329,9 @@ if [ $CONFIGURE_ENV -eq 1 ]; then
     read -r API_HASH
     
     echo ""
-    print_question "Enter your Telegram User ID (from @userinfobot):"
+    print_question "Enter Telegram User IDs (from @userinfobot):"
+    print_info "You can add multiple users separated by commas"
+    print_info "Example: 123456789,987654321,555666777"
     read -r USER_ID
     
     echo ""

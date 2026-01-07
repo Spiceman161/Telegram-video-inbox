@@ -210,14 +210,15 @@ BOT_TOKEN=your_bot_token_here
 TELEGRAM_API_ID=your_api_id
 TELEGRAM_API_HASH=your_api_hash
 
-# Whitelist (ваш Telegram ID, можно узнать у @userinfobot)
+# Whitelist (ID пользователей Telegram через запятую, узнайте у @userinfobot)
+# Можно добавить несколько пользователей: ALLOWED_USER_IDS=123456789,987654321
 ALLOWED_USER_IDS=123456789
 
 # Путь к папке для видео (shared storage)
 SHARED_DIR=/storage/emulated/0/Movies/TelegramInbox
 
 # Временная папка
-TMP_DIR=/data/data/com.termux/files/home/telegram-video-inbox/tmp
+TMP_DIR=/data/data/com.termux/files/home/Telegram-video-inbox/tmp
 ```
 
 ### Опциональные параметры
@@ -233,48 +234,129 @@ LOG_LEVEL=INFO
 
 ### Бот не отвечает
 
+**Диагностика:**
+
 ```bash
-# Проверьте, запущен ли Bot API server
+# 1. Проверьте, запущен ли Bot API server
 ps aux | grep telegram-bot-api
 
-# Проверьте, запущен ли бот
-ps aux | grep "python.*main.py"
+# 2. Проверьте, запущен ли бот
+ps aux | grep "python.*bot.main"
 
-# Проверьте логи
-tail -f ~/telegram-video-inbox/logs/bot.log
+# 3. Проверьте последние логи
+tail -50 ~/Telegram-video-inbox/logs/bot.log
+tail -50 ~/Telegram-video-inbox/logs/bot-api.log
+```
+
+**Если бот не запущен:**
+
+```bash
+cd ~/Telegram-video-inbox
+./scripts/start_bot_api.sh &
+sleep 5
+./scripts/start_bot.sh &
 ```
 
 ### Ошибка "Failed to get bot info"
 
-Bot API server не запущен или недоступен на порту 8081.
+**Причина:** Bot API server не запущен или недоступен на порту 8081.
+
+**Решение:**
 
 ```bash
+# Проверьте логи Bot API server
+tail -50 ~/Telegram-video-inbox/logs/bot-api.log
+
+# Проверьте, используется ли порт
+netstat -tulpn | grep 8081
+
 # Перезапустите Bot API server
+pkill telegram-bot-api
 ./scripts/start_bot_api.sh &
 ```
 
 ### Файлы не сохраняются
 
+**Диагностика:**
+
 ```bash
-# Проверьте права доступа
+# 1. Проверьте права доступа к хранилищу
 ls -ld /storage/emulated/0/Movies/TelegramInbox
 
-# Проверьте свободное место
+# 2. Проверьте свободное место
 df -h /storage/emulated/0
 
-# Проверьте логи
-grep "download_failed" ~/telegram-video-inbox/logs/bot.log
+# 3. Проверьте ошибки загрузки в логах
+grep -i "error\|failed" ~/Telegram-video-inbox/logs/bot.log | tail -20
+
+# 4. Проверьте конкретные ошибки загрузки
+grep "download_failed" ~/Telegram-video-inbox/logs/bot.log
 ```
 
 ### После перезагрузки не запускается
 
-1. Убедитесь, что оптимизация батареи отключена
-2. Проверьте, что Termux:Boot был открыт хотя бы раз
-3. Проверьте boot скрипт:
+**Диагностика:**
+
+```bash
+# 1. Проверьте логи boot скрипта
+cat ~/boot_debug.log
+
+# 2. Проверьте, существует ли boot скрипт и исполняемый ли он
+ls -la ~/.termux/boot/01-Telegram-video-inbox.sh
+
+# 3. Проверьте логи бота при загрузке
+tail -50 ~/Telegram-video-inbox/logs/bot-boot.log
+```
+
+**Частые проблемы:**
+
+1. **Оптимизация батареи не отключена**
+   - Настройки → Приложения → Termux → Батарея → Без ограничений
+   - Настройки → Приложения → Termux:Boot → Батарея → Без ограничений
+
+2. **Termux:Boot не активирован**
+   - Откройте приложение Termux:Boot хотя бы раз
+
+3. **Ошибки в скрипте**
    ```bash
-   ls -la ~/.termux/boot/
-   cat ~/.termux/boot/01-telegram-video-inbox.sh
+   # Протестируйте boot скрипт вручную
+   bash ~/.termux/boot/01-Telegram-video-inbox.sh
+   # Проверьте на ошибки
    ```
+
+4. **Проблемы с PATH**
+   ```bash
+   # Проверьте, доступен ли telegram-bot-api
+   which telegram-bot-api
+   # Должно вывести: /data/data/com.termux/files/home/.local/bin/telegram-bot-api
+   ```
+
+### Проверка всех логов сразу
+
+```bash
+# Быстрая проверка статуса
+echo "=== Процесс бота ===" && ps aux | grep "python.*bot.main" && \
+echo "=== API Server ===" && ps aux | grep telegram-bot-api && \
+echo "=== Последние логи бота ===" && tail -10 ~/Telegram-video-inbox/logs/bot.log && \
+echo "=== Последние логи API ===" && tail -10 ~/Telegram-video-inbox/logs/bot-api.log
+```
+
+### Ручной перезапуск
+
+```bash
+# Остановите всё
+pkill -f "python.*bot.main"
+pkill telegram-bot-api
+
+# Запустите заново
+cd ~/Telegram-video-inbox
+./scripts/start_bot_api.sh &
+sleep 5
+./scripts/start_bot.sh &
+
+# Следите за логами
+tail -f logs/bot.log
+```
 
 ## Безопасность
 
