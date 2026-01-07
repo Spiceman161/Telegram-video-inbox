@@ -1,5 +1,9 @@
 # Telegram Video Inbox Bot
 
+[![GitHub release](https://img.shields.io/github/v/release/Spiceman161/Telegram-video-inbox)](https://github.com/Spiceman161/Telegram-video-inbox/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Platform](https://img.shields.io/badge/platform-Android%20TV%20%7C%20Termux-brightgreen)](https://github.com/Spiceman161/Telegram-video-inbox)
+
 > **[Русская версия](README.ru.md)** | **English**
 
 A Telegram bot for receiving and managing videos on Android TV-box (X96Q, slimBOXtv, and similar devices) using Termux.
